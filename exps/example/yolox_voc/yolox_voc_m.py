@@ -8,12 +8,14 @@ from yolox.exp import Exp as MyExp
 class Exp(MyExp):
     def __init__(self):
         super(Exp, self).__init__()
+
+        self.depth = 0.67
+        self.width = 0.75
+
         self.num_classes = 3
         self.max_epoch = 100
         self.eval_interval = 10
-        self.depth = 0.33
-        self.width = 0.50
-        self.warmup_epochs = 1
+        self.data_num_workers = 4
 
         # ---------- transform config ------------ #
         # self.mosaic_prob = 1.0

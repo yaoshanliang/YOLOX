@@ -9,16 +9,18 @@ from loguru import logger
 
 import torch
 import torch.backends.cudnn as cudnn
+import os
 
 from yolox.core import launch
 from yolox.exp import Exp, check_exp_value, get_exp
 from yolox.utils import configure_module, configure_nccl, configure_omp, get_num_devices
 
 
+
 def make_parser():
     parser = argparse.ArgumentParser("YOLOX train parser")
-    parser.add_argument("-expn", "--experiment-name", type=str, default=None)
-    parser.add_argument("-n", "--name", type=str, default=None, help="model name")
+    parser.add_argument("-expn", "--experiment-name", type=str, default='USVTrack')
+    parser.add_argument("-n", "--name", type=str, default='YOLOX-m', help="model name")
 
     # distributed
     parser.add_argument(
@@ -30,14 +32,14 @@ def make_parser():
         type=str,
         help="url used to set up distributed training",
     )
-    parser.add_argument("-b", "--batch-size", type=int, default=64, help="batch size")
+    parser.add_argument("-b", "--batch-size", type=int, default=16, help="batch size")
     parser.add_argument(
-        "-d", "--devices", default=None, type=int, help="device for training"
+        "-d", "--devices", default=1, type=int, help="device for training"
     )
     parser.add_argument(
         "-f",
         "--exp_file",
-        default=None,
+        default='exps/example/yolox_voc/yolox_voc_m.py',
         type=str,
         help="plz input your experiment description file",
     )

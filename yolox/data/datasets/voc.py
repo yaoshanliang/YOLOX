@@ -101,11 +101,11 @@ class VOCDetection(CacheDataset):
     def __init__(
         self,
         data_dir,
-        image_sets=[("2007", "trainval"), ("2012", "trainval")],
+        image_sets=[("train")],
         img_size=(416, 416),
         preproc=None,
         target_transform=AnnotationTransform(),
-        dataset_name="VOC0712",
+        dataset_name="VOC2007",
         cache=False,
         cache_type="ram",
     ):
@@ -123,15 +123,13 @@ class VOCDetection(CacheDataset):
         ]
         self.class_ids = list(range(len(VOC_CLASSES)))
         self.ids = list()
-        for (year, name) in image_sets:
-            self._year = year
-            rootpath = os.path.join(self.root, "VOC" + year)
+        for name in image_sets:
+            rootpath = os.path.join(self.root, 'VOC2007')
             for line in open(
                 os.path.join(rootpath, "ImageSets", "Main", name + ".txt")
             ):
                 self.ids.append((rootpath, line.strip()))
         self.num_imgs = len(self.ids)
-
         self.annotations = self._load_coco_annotations()
 
         path_filename = [
@@ -244,7 +242,7 @@ class VOCDetection(CacheDataset):
 
     def _get_voc_results_file_template(self):
         filename = "comp4_det_test" + "_{:s}.txt"
-        filedir = os.path.join(self.root, "results", "VOC" + self._year, "Main")
+        filedir = os.path.join(self.root, "results")
         if not os.path.exists(filedir):
             os.makedirs(filedir)
         path = os.path.join(filedir, filename)
@@ -276,18 +274,18 @@ class VOCDetection(CacheDataset):
                         )
 
     def _do_python_eval(self, output_dir="output", iou=0.5):
-        rootpath = os.path.join(self.root, "VOC" + self._year)
-        name = self.image_set[0][1]
+        rootpath = os.path.join(self.root)
+        name = self.image_set[0]
         annopath = os.path.join(rootpath, "Annotations", "{:s}.xml")
         imagesetfile = os.path.join(rootpath, "ImageSets", "Main", name + ".txt")
         cachedir = os.path.join(
-            self.root, "annotations_cache", "VOC" + self._year, name
+            self.root, "annotations_cache", name
         )
         if not os.path.exists(cachedir):
             os.makedirs(cachedir)
         aps = []
         # The PASCAL VOC metric changed in 2010
-        use_07_metric = True if int(self._year) < 2010 else False
+        use_07_metric =  True
         print("Eval IoU : {:.2f}".format(iou))
         if output_dir is not None and not os.path.isdir(output_dir):
             os.mkdir(output_dir)
