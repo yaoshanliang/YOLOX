@@ -13,12 +13,12 @@ import xml.etree.ElementTree as ET
 
 import cv2
 import numpy as np
+import glob
 
 from yolox.evaluators.voc_eval import voc_eval
 
 from .datasets_wrapper import CacheDataset, cache_read_img
 from .voc_classes import VOC_CLASSES
-
 
 class AnnotationTransform(object):
 
@@ -101,11 +101,11 @@ class VOCDetection(CacheDataset):
     def __init__(
         self,
         data_dir,
-        image_sets=[("train")],
+        image_sets='train',
         img_size=(416, 416),
         preproc=None,
         target_transform=AnnotationTransform(),
-        dataset_name="USVTrack",
+        dataset_name="VOC0712",
         cache=False,
         cache_type="ram",
     ):
@@ -115,33 +115,23 @@ class VOCDetection(CacheDataset):
         self.preproc = preproc
         self.target_transform = target_transform
         self.name = dataset_name
-        self._annopath = os.path.join("%s", "Annotations", "%s.xml")
-        self._imgpath = os.path.join("%s", "JPEGImages", "%s.jpg")
         self._classes = VOC_CLASSES
         self.cats = [
             {"id": idx, "name": val} for idx, val in enumerate(VOC_CLASSES)
         ]
         self.class_ids = list(range(len(VOC_CLASSES)))
-        self.ids = list()
-        for name in image_sets:
-            rootpath = os.path.join(self.root)
-            for line in open(
-                os.path.join(rootpath, "ImageSets", "Main", name + ".txt")
-            ):
-                self.ids.append((rootpath, line.strip()))
+        paths = sorted(glob.glob(os.path.join(self.root, self.image_set, "xml", "*", "*")))
+        self.ids = paths
         self.num_imgs = len(self.ids)
         self.annotations = self._load_coco_annotations()
+        self._imgpath = sorted(glob.glob(os.path.join(self.root, self.image_set, "images", "*", "*")))
 
-        path_filename = [
-            (self._imgpath % self.ids[i]).split(self.root + "/")[1]
-            for i in range(self.num_imgs)
-        ]
         super().__init__(
             input_dimension=img_size,
             num_imgs=self.num_imgs,
             data_dir=self.root,
             cache_dir_name=f"cache_{self.name}",
-            path_filename=path_filename,
+            path_filename=self._imgpath,
             cache=cache,
             cache_type=cache_type
         )
@@ -154,7 +144,7 @@ class VOCDetection(CacheDataset):
 
     def load_anno_from_ids(self, index):
         img_id = self.ids[index]
-        target = ET.parse(self._annopath % img_id).getroot()
+        target = ET.parse(img_id).getroot()
 
         assert self.target_transform is not None
         res, img_info = self.target_transform(target)
@@ -181,9 +171,9 @@ class VOCDetection(CacheDataset):
         return resized_img
 
     def load_image(self, index):
-        img_id = self.ids[index]
-        img = cv2.imread(self._imgpath % img_id, cv2.IMREAD_COLOR)
-        assert img is not None, f"file named {self._imgpath % img_id} not found"
+        # img_id = self.ids[index]
+        img = cv2.imread(self._imgpath[index], cv2.IMREAD_COLOR)
+        assert img is not None, f"file named {self._imgpath[index]} not found"
 
         return img
 
@@ -209,6 +199,7 @@ class VOCDetection(CacheDataset):
 
     @CacheDataset.mosaic_getitem
     def __getitem__(self, index):
+        print(index, 'pull_item')
         img, target, img_info, img_id = self.pull_item(index)
 
         if self.preproc is not None:
@@ -241,7 +232,7 @@ class VOCDetection(CacheDataset):
         return np.mean(mAPs), mAPs[0]
 
     def _get_voc_results_file_template(self):
-        filename = "comp4_det_test" + "_{:s}.txt"
+        filename = "comp4_det_val" + "_{:s}.txt"
         filedir = os.path.join(self.root, "results")
         if not os.path.exists(filedir):
             os.makedirs(filedir)
@@ -257,14 +248,14 @@ class VOCDetection(CacheDataset):
             filename = self._get_voc_results_file_template().format(cls)
             with open(filename, "wt") as f:
                 for im_ind, index in enumerate(self.ids):
-                    index = index[1]
+                    # index = index[1]
                     dets = all_boxes[cls_ind][im_ind]
                     if dets == []:
                         continue
                     for k in range(dets.shape[0]):
                         f.write(
-                            "{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n".format(
-                                index,
+                            "{:d} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n".format(
+                                im_ind,
                                 dets[k, -1],
                                 dets[k, 0] + 1,
                                 dets[k, 1] + 1,
@@ -275,17 +266,18 @@ class VOCDetection(CacheDataset):
 
     def _do_python_eval(self, output_dir="output", iou=0.5):
         rootpath = os.path.join(self.root)
-        name = self.image_set[0]
-        annopath = os.path.join(rootpath, "Annotations", "{:s}.xml")
-        imagesetfile = os.path.join(rootpath, "ImageSets", "Main", name + ".txt")
+        annopath = sorted(glob.glob(os.path.join(self.root, self.image_set, "xml", "*", "*")))
+        # annopath = os.path.join(rootpath, "xml", "{:s}.xml")
+        imagesetfile = sorted(glob.glob(os.path.join(self.root, self.image_set, "images", "*", "*")))
+        # imagesetfile = os.path.join(rootpath, "ImageSets", "Main", name + ".txt")
         cachedir = os.path.join(
-            self.root, "annotations_cache", name
+            self.root, "annotations_cache", self.image_set
         )
         if not os.path.exists(cachedir):
             os.makedirs(cachedir)
         aps = []
         # The PASCAL VOC metric changed in 2010
-        use_07_metric =  True
+        use_07_metric = False
         print("Eval IoU : {:.2f}".format(iou))
         if output_dir is not None and not os.path.isdir(output_dir):
             os.mkdir(output_dir)

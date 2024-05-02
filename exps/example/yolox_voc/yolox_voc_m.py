@@ -8,20 +8,25 @@ from yolox.exp import Exp as MyExp
 class Exp(MyExp):
     def __init__(self):
         super(Exp, self).__init__()
-
         self.depth = 0.67
         self.width = 0.75
 
         self.num_classes = 3
-        self.max_epoch = 100
-        self.eval_interval = 10
-        self.data_num_workers = 4
-
-        # ---------- transform config ------------ #
-        # self.mosaic_prob = 1.0
-        # self.mixup_prob = 1.0
-        # self.hsv_prob = 1.0
-        # self.flip_prob = 0.5
+        self.max_epoch = 300
+        # dir of dataset images, if data_dir is None, this project will use `datasets` dir
+        self.data_dir = '/home/shanliang/workspace/dataset/USVTrack/VOC2007'
+        self.input_size = (640, 640)  # (height, width)
+        # Actual multiscale ranges: [640 - 5 * 32, 640 + 5 * 32].
+        self.data_num_workers = 12
+        # log period in iter, for example,
+        # if set to 1, user could see log every iteration.
+        self.print_interval = 20
+        # eval period in epoch, for example,
+        # if set to 1, model will be evaluate after every epoch.
+        self.eval_interval = 20
+        # save history checkpoint or not.
+        # If set to False, yolox will only save latest and best ckpt.
+        self.save_history_ckpt = True
 
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
@@ -29,7 +34,7 @@ class Exp(MyExp):
         from yolox.data import VOCDetection, TrainTransform
 
         return VOCDetection(
-            data_dir=os.path.join(get_yolox_datadir()),
+            data_dir=self.data_dir,
             image_sets=[('train')],
             img_size=self.input_size,
             preproc=TrainTransform(
@@ -45,7 +50,7 @@ class Exp(MyExp):
         legacy = kwargs.get("legacy", False)
 
         return VOCDetection(
-            data_dir=os.path.join(get_yolox_datadir()),
+            data_dir=self.data_dir,
             image_sets=[('test')],
             img_size=self.test_size,
             preproc=ValTransform(legacy=legacy),
