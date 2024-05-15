@@ -14,16 +14,16 @@ class Exp(MyExp):
         self.num_classes = 3
         self.max_epoch = 300
         # dir of dataset images, if data_dir is None, this project will use `datasets` dir
-        self.data_dir = '/home/shanliang/workspace/dataset/USVTrack/VOC2007'
+        self.data_dir = '/gpfs/work/cpt/shanliangyao19/dataset/USVTrack/VOC2007'
         self.input_size = (640, 640)  # (height, width)
         # Actual multiscale ranges: [640 - 5 * 32, 640 + 5 * 32].
-        self.data_num_workers = 12
+        self.data_num_workers = 8
         # log period in iter, for example,
         # if set to 1, user could see log every iteration.
-        self.print_interval = 20
+        self.print_interval = 1000
         # eval period in epoch, for example,
         # if set to 1, model will be evaluate after every epoch.
-        self.eval_interval = 20
+        self.eval_interval = 30
         # save history checkpoint or not.
         # If set to False, yolox will only save latest and best ckpt.
         self.save_history_ckpt = True
