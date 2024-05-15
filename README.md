@@ -1,3 +1,11 @@
+
+## Train
+python tools/train.py -f exps/example/yolox_voc/yolox_voc_m.py -d 1 -b 64 --fp16 -o --cache
+
+## Evaluation
+python tools/eval.py -f exps/example/yolox_voc/yolox_voc_m.py -c YOLOX_outputs/USVTrack/best_ckpt.pth -b 64 -d 1 --conf 0.001
+
+
 <div align="center"><img src="assets/logo.png" width="350"></div>
 <img src="assets/demo.png" >
 
